@@ -10,15 +10,18 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.stream.IntStream;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.logging.Log;
 import org.codehaus.plexus.util.FileUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 
 public class JavadocUpdater {
@@ -97,6 +100,7 @@ public class JavadocUpdater {
     // Update package-summary.html
     updatePackageSummary(packageSummaryHtml, destFile);
 
+
     // Create package-frame if not exists
     File packageFrameHtml = new File(destFile.getParent(), PACKAGE_FRAME);
     if (! packageFrameHtml.exists()) {
@@ -106,11 +110,17 @@ public class JavadocUpdater {
     // Update package-frame.html
     updatePackageFrame(packageFrameHtml, destFile);
 
+
     // Update overview if package is created
     if (shouldCreatePackage) {
       updateOverview(destFile);
     }
+
+
+    // Update all classes list
+    updateAllClasses(destFile);
   }
+
 
   private String getQualifiedName(File target) {
     return FilenameUtils.removeExtension(target.toString())
@@ -118,6 +128,7 @@ public class JavadocUpdater {
         .replace(File.separator, ".")
         .substring(1);
   }
+
 
   private String getPackageName(File target) {
     return target.getParent()
@@ -173,25 +184,24 @@ public class JavadocUpdater {
     Element tableBody = packageSummaryDoc.select("table[class=typeSummary]")
         .select("tbody").get(1);
 
-    // Determine the class of the new table item
-    Element lastRow = tableBody.select("tr").last();
-    String rowClass = "altColor";
-    if (lastRow != null) {
-      String lastRowClass = lastRow.attr("class");
-      rowClass = lastRowClass.equals("rowColor") ? "altColor" : "rowColor";
-    }
-
     // Create table item
     Map<String, String> context = new HashMap<>();
     context.put("htmlLink", String.format("./%s", target.getName()));
     context.put("qualifiedClassName", FilenameUtils.getBaseName(target.toString()));
     context.put("className", FilenameUtils.getBaseName(target.toString()));
-    context.put("rowClass", rowClass);
+    context.put("rowClass", "rowColor");
     String rendered = packageSummaryItemTemplate.execute(context);
 
     // Add item to the table
-    // TODO: sort elements
     tableBody.append(rendered);
+
+    // Sort table rows
+    Elements trs = tableBody.select("tr");
+    trs.sort(Comparator.comparing(o -> o.select("a").first().text()));
+    IntStream.range(0, trs.size()).forEach(i ->
+        trs.get(i).attr("class", i % 2 == 0 ? "altColor" : "rowColor"));
+
+    tableBody.html(trs.outerHtml());
 
     FileUtils.fileWrite(packageSummary, packageSummaryDoc.outerHtml());
 
@@ -214,7 +224,7 @@ public class JavadocUpdater {
 
     Element indexContainer = packageFrameDoc.select("div[class=indexContainer").first();
 
-    // Search section of the class
+    // Search section of the class type
     Element targetSectionTitle = indexContainer
         .select(String.format("h2[title=%s]", sectionTitle))
         .first();
@@ -238,8 +248,13 @@ public class JavadocUpdater {
     String rendered = packageFrameItemTemplate.execute(context);
 
     // Add item to the section
-    // TODO: sort elements
     targetSectionList.append(rendered);
+
+    // Sort list items
+    Elements lis = targetSectionList.select("li");
+    lis.sort(Comparator.comparing(o -> o.select("a").first().text()));
+
+    targetSectionList.html(lis.outerHtml());
 
     FileUtils.fileWrite(packageFrame, packageFrameDoc.outerHtml());
 
@@ -248,10 +263,7 @@ public class JavadocUpdater {
 
 
   private void updateOverview(File target) throws IOException  {
-    String qualifiedName = getQualifiedName(target);
     String packageName = getPackageName(target);
-    updateAllClasses(qualifiedName, ALL_CLASSES_FRAME);
-    updateAllClasses(qualifiedName, ALL_CLASSES_NOFRAME);
     updateOverviewFrame(packageName);
     updateOverviewSummary(packageName);
   }
@@ -284,6 +296,11 @@ public class JavadocUpdater {
 
     tableBody.append(rendered);
 
+    // Sort table rows
+    Elements trs = tableBody.select("tr");
+    trs.sort(Comparator.comparing(o -> o.select("a").first().text()));
+    tableBody.html(trs.outerHtml());
+
     FileUtils.fileWrite(overviewFrame, overviewFrameDoc.outerHtml());
 
     log.info(String.format("updated %s", overviewFrame.toString()));
@@ -305,9 +322,22 @@ public class JavadocUpdater {
 
     packageList.append(rendered);
 
+    // Sort list items
+    Elements lis = packageList.select("li");
+    lis.sort(Comparator.comparing(o -> o.select("a").first().text()));
+
+    packageList.html(lis.outerHtml());
+
     FileUtils.fileWrite(overviewFrame, overviewFrameDoc.outerHtml());
 
     log.info(String.format("updated %s", overviewFrame.toString()));
+  }
+
+
+  private void updateAllClasses(File target) throws IOException {
+    String qualifiedName = getQualifiedName(target);
+    updateAllClasses(qualifiedName, ALL_CLASSES_FRAME);
+    updateAllClasses(qualifiedName, ALL_CLASSES_NOFRAME);
   }
 
 
@@ -327,6 +357,11 @@ public class JavadocUpdater {
     String rendered = allClassesItemTemplate.execute(context);
 
     classList.append(rendered);
+
+    // Sort list items
+    Elements lis = classList.select("li");
+    lis.sort(Comparator.comparing(o -> o.select("a").first().text()));
+    classList.html(lis.outerHtml());
 
     FileUtils.fileWrite(allClassesFrame, allClassesDoc.outerHtml());
 
