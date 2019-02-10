@@ -30,9 +30,9 @@
 
   <distributionManagement>
     <repository>
-      <id>bintray-kota65535org-maven</id>
-      <name>kota65535org-maven</name>
-      <url>https://api.bintray.com/maven/kota65535org/maven/javadoc-merger-maven-plugin/;publish=1</url>
+      <id>bintray-kota65535-maven</id>
+      <name>kota65535-maven</name>
+      <url>https://api.bintray.com/maven/kota65535/maven/javadoc-merger-maven-plugin/;publish=1</url>
     </repository>
   </distributionManagement>
 
