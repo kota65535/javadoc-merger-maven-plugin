@@ -56,8 +56,9 @@ public class JavadocUpdater {
   private File outputDir;
 
 
-  public JavadocUpdater(Log log) {
+  public JavadocUpdater(Log log, File outputDir) {
     this.log = log;
+    this.outputDir = outputDir;
     try {
       packageSummaryTemplate = Mustache.compiler().compile(
           new String(Files.readAllBytes(
@@ -86,8 +87,7 @@ public class JavadocUpdater {
   }
 
 
-  public void update(File destFile, File outputDir) throws IOException {
-    this.outputDir = outputDir;
+  public void update(File destFile) throws IOException {
 
     boolean shouldCreatePackage = false;
 

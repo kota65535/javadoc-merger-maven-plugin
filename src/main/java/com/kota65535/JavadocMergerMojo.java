@@ -32,23 +32,20 @@ public class JavadocMergerMojo extends AbstractMojo {
 
   private JavadocUpdater javadocUpdater;
 
-  public JavadocMergerMojo() {
-    javadocUpdater = new JavadocUpdater(getLog());
-  }
 
   public void execute() throws MojoExecutionException {
-    File f = outputDir;
+    javadocUpdater = new JavadocUpdater(getLog(), outputDir);
 
     // Initialize outputDir
-    if (f.exists()) {
+    if (outputDir.exists()) {
       try {
-        FileUtils.deleteDirectory(f);
+        FileUtils.deleteDirectory(outputDir);
 
       } catch (IOException e) {
         throw new MojoExecutionException("Failed to delete outputDir", e);
       }
     }
-    f.mkdirs();
+    outputDir.mkdirs();
 
     // Copy all javadoc files
     try {
@@ -83,7 +80,7 @@ public class JavadocMergerMojo extends AbstractMojo {
           getLog().info(String.format("copied %s -> %s", file.toString(), destFile));
 
           // Update javadoc
-          javadocUpdater.update(destFile, outputDir);
+          javadocUpdater.update(destFile);
 
           return super.visitFile(file, attrs);
         }
