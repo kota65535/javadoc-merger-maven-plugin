@@ -7,7 +7,7 @@
 
   <groupId>com.kota65535</groupId>
   <artifactId>javadoc-merger-maven-plugin</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.0.0</version>
   <packaging>maven-plugin</packaging>
 
   <name>Javadoc Merger Maven Plugin</name>
@@ -27,6 +27,14 @@
   <scm>
     <connection>scm:git:https://github.com/kota65535/javadoc-merger-maven-plugin</connection>
   </scm>
+
+  <distributionManagement>
+    <repository>
+      <id>bintray-kota65535org-maven</id>
+      <name>kota65535org-maven</name>
+      <url>https://api.bintray.com/maven/kota65535org/maven/javadoc-merger-maven-plugin/;publish=1</url>
+    </repository>
+  </distributionManagement>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

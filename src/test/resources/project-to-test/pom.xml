@@ -6,7 +6,7 @@
 
   <groupId>com.kota65535</groupId>
   <artifactId>javadoc-merger-maven-plugin</artifactId>
-  <version>1.0.0-SNAPSHOT</version>
+  <version>1.0.0</version>
   <packaging>jar</packaging>
   <name>Test MyMojo</name>
 
