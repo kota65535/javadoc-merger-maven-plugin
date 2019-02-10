@@ -5,10 +5,8 @@ import com.samskivert.mustache.Mustache;
 import com.samskivert.mustache.Template;
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -17,7 +15,6 @@ import java.util.NoSuchElementException;
 import java.util.stream.IntStream;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.logging.Log;
-import org.codehaus.plexus.util.FileUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -25,6 +22,7 @@ import org.jsoup.select.Elements;
 
 
 public class JavadocUpdater {
+
   private static final String PACKAGE_SUMMARY = "package-summary.html";
 
   private static final String PACKAGE_FRAME = "package-frame.html";
@@ -60,28 +58,21 @@ public class JavadocUpdater {
     this.log = log;
     this.outputDir = outputDir;
     try {
-      packageSummaryTemplate = Mustache.compiler().compile(
-          new String(Files.readAllBytes(
-              Paths.get(Resources.getResource("packageSummary.html.mustache").toURI()))));
-      packageFrameTemplate = Mustache.compiler().compile(
-          new String(Files.readAllBytes(
-              Paths.get(Resources.getResource("packageFrame.html.mustache").toURI()))));
-      packageSummaryItemTemplate = Mustache.compiler().compile(
-          new String(Files.readAllBytes(
-              Paths.get(Resources.getResource("packageSummaryItem.html.mustache").toURI()))));
-      packageFrameItemTemplate = Mustache.compiler().compile(
-          new String(Files.readAllBytes(
-              Paths.get(Resources.getResource("packageFrameItem.html.mustache").toURI()))));
-      overviewSummaryItemTemplate = Mustache.compiler().compile(
-          new String(Files.readAllBytes(
-              Paths.get(Resources.getResource("overviewSummaryItem.html.mustache").toURI()))));
-      overviewFrameItemTemplate = Mustache.compiler().compile(
-          new String(Files.readAllBytes(
-              Paths.get(Resources.getResource("overviewFrameItem.html.mustache").toURI()))));
-      allClassesItemTemplate = Mustache.compiler().compile(
-          new String(Files.readAllBytes(
-              Paths.get(Resources.getResource("allClassesItem.html.mustache").toURI()))));
-    } catch (IOException | URISyntaxException e) {
+      packageSummaryTemplate = Mustache.compiler().compile(Resources.toString(
+          Resources.getResource("packageSummary.html.mustache"), StandardCharsets.UTF_8));
+      packageFrameTemplate = Mustache.compiler().compile(Resources.toString(
+          Resources.getResource("packageFrame.html.mustache"), StandardCharsets.UTF_8));
+      packageSummaryItemTemplate = Mustache.compiler().compile(Resources.toString(
+          Resources.getResource("packageSummaryItem.html.mustache"), StandardCharsets.UTF_8));
+      packageFrameItemTemplate = Mustache.compiler().compile(Resources.toString(
+          Resources.getResource("packageFrameItem.html.mustache"), StandardCharsets.UTF_8));
+      overviewSummaryItemTemplate = Mustache.compiler().compile(Resources.toString(
+          Resources.getResource("overviewSummaryItem.html.mustache"), StandardCharsets.UTF_8));
+      overviewFrameItemTemplate = Mustache.compiler().compile(Resources.toString(
+          Resources.getResource("overviewFrameItem.html.mustache"), StandardCharsets.UTF_8));
+      allClassesItemTemplate = Mustache.compiler().compile(Resources.toString(
+          Resources.getResource("allClassesItem.html.mustache"), StandardCharsets.UTF_8));
+    } catch (IOException e) {
       throw new RuntimeException("Failed to initialize", e);
     }
   }
@@ -93,29 +84,26 @@ public class JavadocUpdater {
 
     // Create package-summary if not exists
     File packageSummaryHtml = new File(destFile.getParent(), PACKAGE_SUMMARY);
-    if (! packageSummaryHtml.exists()) {
+    if (!packageSummaryHtml.exists()) {
       packageSummaryHtml = createPackageSummary(destFile);
       shouldCreatePackage = true;
     }
     // Update package-summary.html
     updatePackageSummary(packageSummaryHtml, destFile);
 
-
     // Create package-frame if not exists
     File packageFrameHtml = new File(destFile.getParent(), PACKAGE_FRAME);
-    if (! packageFrameHtml.exists()) {
+    if (!packageFrameHtml.exists()) {
       packageFrameHtml = createPackageFrame(destFile);
       shouldCreatePackage = true;
     }
     // Update package-frame.html
     updatePackageFrame(packageFrameHtml, destFile);
 
-
     // Update overview if package is created
     if (shouldCreatePackage) {
       updateOverview(destFile);
     }
-
 
     // Update all classes list
     updateAllClasses(destFile);
@@ -138,7 +126,7 @@ public class JavadocUpdater {
   }
 
 
-  private File createPackageSummary(File target) throws IOException  {
+  private File createPackageSummary(File target) throws IOException {
     String packageName = getPackageName(target);
 
     String relRoot = target.getParentFile().toPath().relativize(outputDir.toPath()).toString()
@@ -150,7 +138,7 @@ public class JavadocUpdater {
     String rendered = packageSummaryTemplate.execute(context);
 
     File packageSummary = new File(target.getParent(), PACKAGE_SUMMARY);
-    FileUtils.fileWrite(packageSummary, rendered);
+    Files.write(packageSummary.toPath(), rendered.getBytes(StandardCharsets.UTF_8));
 
     log.info(String.format("created %s", packageSummary.toString()));
 
@@ -158,7 +146,7 @@ public class JavadocUpdater {
   }
 
 
-  private File createPackageFrame(File target) throws IOException  {
+  private File createPackageFrame(File target) throws IOException {
     String packageName = getPackageName(target);
 
     String relRoot = target.getParentFile().toPath().relativize(outputDir.toPath()).toString()
@@ -170,7 +158,7 @@ public class JavadocUpdater {
     String rendered = packageFrameTemplate.execute(context);
 
     File packageFrame = new File(target.getParent(), PACKAGE_FRAME);
-    FileUtils.fileWrite(packageFrame, rendered);
+    Files.write(packageFrame.toPath(), rendered.getBytes(StandardCharsets.UTF_8));
 
     log.info(String.format("created %s", packageFrame.toString()));
     return packageFrame;
@@ -203,7 +191,7 @@ public class JavadocUpdater {
 
     tableBody.html(trs.outerHtml());
 
-    FileUtils.fileWrite(packageSummary, packageSummaryDoc.outerHtml());
+    Files.write(packageSummary.toPath(), packageSummaryDoc.outerHtml().getBytes(StandardCharsets.UTF_8));
 
     log.info(String.format("updated %s", packageSummary));
   }
@@ -234,7 +222,8 @@ public class JavadocUpdater {
 
     // Create section of the class type if not exists
     if (targetSectionTitle == null) {
-      indexContainer.append(String.format("<h2 title=\"%1$s\">%1$s</h2><ul title=\"%1$s\"></ul>", sectionTitle));
+      indexContainer.append(
+          String.format("<h2 title=\"%1$s\">%1$s</h2><ul title=\"%1$s\"></ul>", sectionTitle));
       targetSectionList = indexContainer
           .select(String.format("ul[title=%s]", sectionTitle))
           .first();
@@ -256,13 +245,13 @@ public class JavadocUpdater {
 
     targetSectionList.html(lis.outerHtml());
 
-    FileUtils.fileWrite(packageFrame, packageFrameDoc.outerHtml());
+    Files.write(packageFrame.toPath(), packageFrameDoc.outerHtml().getBytes(StandardCharsets.UTF_8));
 
     log.info(String.format("updated %s", packageFrame));
   }
 
 
-  private void updateOverview(File target) throws IOException  {
+  private void updateOverview(File target) throws IOException {
     String packageName = getPackageName(target);
     updateOverviewFrame(packageName);
     updateOverviewSummary(packageName);
@@ -301,7 +290,7 @@ public class JavadocUpdater {
     trs.sort(Comparator.comparing(o -> o.select("a").first().text()));
     tableBody.html(trs.outerHtml());
 
-    FileUtils.fileWrite(overviewFrame, overviewFrameDoc.outerHtml());
+    Files.write(overviewFrame.toPath(), overviewFrameDoc.outerHtml().getBytes(StandardCharsets.UTF_8));
 
     log.info(String.format("updated %s", overviewFrame.toString()));
   }
@@ -328,7 +317,7 @@ public class JavadocUpdater {
 
     packageList.html(lis.outerHtml());
 
-    FileUtils.fileWrite(overviewFrame, overviewFrameDoc.outerHtml());
+    Files.write(overviewFrame.toPath(), overviewFrameDoc.outerHtml().getBytes(StandardCharsets.UTF_8));
 
     log.info(String.format("updated %s", overviewFrame.toString()));
   }
@@ -363,7 +352,7 @@ public class JavadocUpdater {
     lis.sort(Comparator.comparing(o -> o.select("a").first().text()));
     classList.html(lis.outerHtml());
 
-    FileUtils.fileWrite(allClassesFrame, allClassesDoc.outerHtml());
+    Files.write(allClassesFrame.toPath(), allClassesDoc.outerHtml().getBytes(StandardCharsets.UTF_8));
 
     log.info(String.format("updated %s", allClassesFrame.toString()));
   }
