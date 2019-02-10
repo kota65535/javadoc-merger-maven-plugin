@@ -16,10 +16,10 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.codehaus.plexus.util.FileUtils;
 
 /**
- * Goal which touches a timestamp file.
+ * Goal which merges Javadoc and Groovydoc.
  */
-@Mojo(name = "touch", defaultPhase = LifecyclePhase.PROCESS_SOURCES)
-public class MyMojo extends AbstractMojo {
+@Mojo(name = "merge", defaultPhase = LifecyclePhase.PROCESS_SOURCES)
+public class JavadocMergerMojo extends AbstractMojo {
 
   @Parameter(property = "javadocDir", required = true)
   private File javadocDir;
@@ -32,7 +32,7 @@ public class MyMojo extends AbstractMojo {
 
   private JavadocUpdater javadocUpdater;
 
-  public MyMojo() {
+  public JavadocMergerMojo() {
     javadocUpdater = new JavadocUpdater(getLog());
   }
 

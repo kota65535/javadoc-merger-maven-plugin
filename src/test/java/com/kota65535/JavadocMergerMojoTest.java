@@ -6,7 +6,7 @@ import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.plugin.testing.WithoutMojo;
 import org.junit.Test;
 
-public class MyMojoTest extends AbstractMojoTestCase {
+public class JavadocMergerMojoTest extends AbstractMojoTestCase {
 
   private static final String BUILD_DIR = "target/test-classes/project-to-test/target";
 
@@ -29,7 +29,7 @@ public class MyMojoTest extends AbstractMojoTestCase {
     assertNotNull(pom);
     assertTrue(pom.exists());
 
-    MyMojo myMojo = (MyMojo) lookupMojo("touch", pom);
+    JavadocMergerMojo myMojo = (JavadocMergerMojo) lookupMojo("touch", pom);
 
     File javaDocDir = getTestFile(BUILD_DIR, "apidocs");
     File groovydocDir = getTestFile(BUILD_DIR, "gapidocs");

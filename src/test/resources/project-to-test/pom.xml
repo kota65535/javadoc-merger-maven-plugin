@@ -15,7 +15,7 @@
       <plugin>
         <artifactId>javadoc-merger-maven-plugin</artifactId>
         <configuration>
-          <!-- Specify the MyMojo parameter -->
+          <!-- Specify the JavadocMergerMojo parameter -->
           <outputDir>${project.build.directory}/project-to-test</outputDir>
           <javadocDir>${project.build.directory}/project-to-test/target/apidocs</javadocDir>
           <groovydocDir>target/test-harness/gapidocs</groovydocDir>
