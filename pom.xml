@@ -10,20 +10,29 @@
   <version>1.0.0-SNAPSHOT</version>
   <packaging>maven-plugin</packaging>
 
-  <name>javadoc-merger-maven-plugin Maven Plugin</name>
+  <name>Javadoc Merger Maven Plugin</name>
 
-  <!-- FIXME change it to the project's website -->
-  <url>http://www.example.com</url>
+  <url>https://github.com/kota65535/javadoc-merger-maven-plugin</url>
 
   <prerequisites>
     <maven>${maven.version}</maven>
   </prerequisites>
 
+  <description>
+    The Javadoc Merger Maven Plugin is a plugin that merges JavaDoc and Groovydoc into a single API document.
+  </description>
+
+  <inceptionYear>2019</inceptionYear>
+
+  <scm>
+    <connection>scm:git:https://github.com/kota65535/javadoc-merger-maven-plugin</connection>
+  </scm>
+
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
-    <maven.version>3.3.9</maven.version>
+    <maven.version>3.6.0</maven.version>
   </properties>
 
   <dependencies>
@@ -133,6 +142,10 @@
           <artifactId>maven-invoker-plugin</artifactId>
           <version>3.1.0</version>
         </plugin>
+        <plugin>
+          <artifactId>maven-site-plugin</artifactId>
+          <version>3.7.1</version>
+        </plugin>
       </plugins>
     </pluginManagement>
     <plugins>
@@ -201,4 +214,13 @@
       </build>
     </profile>
   </profiles>
+
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-plugin-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </reporting>
 </project>

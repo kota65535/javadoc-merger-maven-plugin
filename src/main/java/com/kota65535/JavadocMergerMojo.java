@@ -10,7 +10,6 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.codehaus.plexus.util.FileUtils;
@@ -18,15 +17,24 @@ import org.codehaus.plexus.util.FileUtils;
 /**
  * Goal which merges Javadoc and Groovydoc.
  */
-@Mojo(name = "merge", defaultPhase = LifecyclePhase.PROCESS_SOURCES)
+@Mojo(name = "merge")
 public class JavadocMergerMojo extends AbstractMojo {
 
+  /**
+   * The location of input Javadoc.
+   */
   @Parameter(property = "javadocDir", required = true)
   private File javadocDir;
 
+  /**
+   * The location of input Groovydoc.
+   */
   @Parameter(property = "groovydocDir", required = true)
   private File groovydocDir;
 
+  /**
+   * The location for the merged API docs.
+   */
   @Parameter(defaultValue = "${project.build.directory}", property = "outputDir", required = true)
   private File outputDir;
 
