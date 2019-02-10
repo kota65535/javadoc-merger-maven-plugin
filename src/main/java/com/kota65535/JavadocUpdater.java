@@ -134,6 +134,7 @@ public class JavadocUpdater {
 
     Map<String, String> context = new HashMap<>();
     context.put("packageName", packageName);
+    context.put("packagePath", packageName.replace(".", "/"));
     context.put("rel", relRoot);
     String rendered = packageSummaryTemplate.execute(context);
 
