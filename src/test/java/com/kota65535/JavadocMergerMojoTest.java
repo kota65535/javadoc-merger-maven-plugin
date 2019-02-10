@@ -29,7 +29,7 @@ public class JavadocMergerMojoTest extends AbstractMojoTestCase {
     assertNotNull(pom);
     assertTrue(pom.exists());
 
-    JavadocMergerMojo myMojo = (JavadocMergerMojo) lookupMojo("touch", pom);
+    JavadocMergerMojo myMojo = (JavadocMergerMojo) lookupMojo("merge", pom);
 
     File javaDocDir = getTestFile(BUILD_DIR, "apidocs");
     File groovydocDir = getTestFile(BUILD_DIR, "gapidocs");
