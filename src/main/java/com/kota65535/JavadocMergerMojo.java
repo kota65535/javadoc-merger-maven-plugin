@@ -40,6 +40,8 @@ public class JavadocMergerMojo extends AbstractMojo {
 
   private JavadocUpdater javadocUpdater;
 
+  private LinkUpdater linkUpdater;
+
 
   public void execute() throws MojoExecutionException {
     javadocUpdater = new JavadocUpdater(getLog(), outputDir);
@@ -96,5 +98,14 @@ public class JavadocMergerMojo extends AbstractMojo {
     } catch (IOException e) {
       throw new MojoExecutionException("Failed to copy groovdoc", e);
     }
+
+    linkUpdater = new LinkUpdater(getLog(), outputDir);
+
+    try {
+      linkUpdater.update();
+    } catch (IOException e) {
+      throw new MojoExecutionException("Failed to update links.", e);
+    }
+
   }
 }
