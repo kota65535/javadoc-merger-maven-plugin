@@ -13,10 +13,12 @@
   <build>
     <plugins>
       <plugin>
-        <artifactId>maven-my-plugin</artifactId>
+        <artifactId>javadoc-merger-maven-plugin</artifactId>
         <configuration>
           <!-- Specify the MyMojo parameter -->
-          <outputDirectory>target/test-harness/project-to-test</outputDirectory>
+          <outputDir>${project.build.directory}/project-to-test</outputDir>
+          <javadocDir>${project.build.directory}/project-to-test/target/apidocs</javadocDir>
+          <groovydocDir>target/test-harness/gapidocs</groovydocDir>
         </configuration>
       </plugin>
     </plugins>

@@ -1,27 +1,23 @@
 package com.kota65535;
 
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import java.io.File;
-import org.apache.maven.plugin.testing.MojoRule;
+import org.apache.maven.plugin.testing.AbstractMojoTestCase;
 import org.apache.maven.plugin.testing.WithoutMojo;
-import org.junit.Rule;
 import org.junit.Test;
 
-public class MyMojoTest {
+public class MyMojoTest extends AbstractMojoTestCase {
 
-  @Rule
-  public MojoRule rule = new MojoRule() {
-    @Override
-    protected void before() throws Throwable {
-    }
+  private static final String BUILD_DIR = "target/test-classes/project-to-test/target";
 
-    @Override
-    protected void after() {
-    }
-  };
+  /**
+   * @see junit.framework.TestCase#setUp()
+   */
+  protected void setUp() throws Exception {
+    // required for mojo lookups to work
+    super.setUp();
+  }
+
 
   /**
    * @throws Exception if any
@@ -29,21 +25,26 @@ public class MyMojoTest {
   @Test
   public void testSomething()
       throws Exception {
-    File pom = new File("target/test-classes/project-to-test/");
+    File pom = getTestFile("src/test/resources/project-to-test/pom.xml");
     assertNotNull(pom);
     assertTrue(pom.exists());
 
-    MyMojo myMojo = (MyMojo) rule.lookupConfiguredMojo(pom, "touch");
+    MyMojo myMojo = (MyMojo) lookupMojo("touch", pom);
+
+    File javaDocDir = getTestFile(BUILD_DIR, "apidocs");
+    File groovydocDir = getTestFile(BUILD_DIR, "gapidocs");
+    File outputDir = getTestFile(BUILD_DIR, "mergedDocs");
+
+    setVariableValueToObject(myMojo, "javadocDir", javaDocDir);
+    setVariableValueToObject(myMojo, "groovydocDir", groovydocDir);
+    setVariableValueToObject(myMojo, "outputDir", outputDir);
+
     assertNotNull(myMojo);
+
     myMojo.execute();
 
-    File outputDirectory = (File) rule.getVariableValueFromObject(myMojo, "outputDirectory");
-    assertNotNull(outputDirectory);
-    assertTrue(outputDirectory.exists());
-
-    File touch = new File(outputDirectory, "touch.txt");
-    assertTrue(touch.exists());
-
+    assertNotNull(outputDir);
+    assertTrue(outputDir.exists());
   }
 
   /**
