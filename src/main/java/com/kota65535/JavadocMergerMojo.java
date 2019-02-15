@@ -40,7 +40,7 @@ public class JavadocMergerMojo extends AbstractMojo {
 
   private JavadocUpdater javadocUpdater;
 
-  private LinkUpdater linkUpdater;
+  private LinkResolver linkResolver;
 
 
   public void execute() throws MojoExecutionException {
@@ -99,10 +99,10 @@ public class JavadocMergerMojo extends AbstractMojo {
       throw new MojoExecutionException("Failed to copy groovdoc", e);
     }
 
-    linkUpdater = new LinkUpdater(getLog(), outputDir);
+    linkResolver = new LinkResolver(getLog(), outputDir);
 
     try {
-      linkUpdater.update();
+      linkResolver.update();
     } catch (IOException e) {
       throw new MojoExecutionException("Failed to update links.", e);
     }
