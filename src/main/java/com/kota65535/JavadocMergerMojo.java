@@ -1,8 +1,8 @@
 package com.kota65535;
 
 
-import com.kota65535.resolver.JavaLinkResolver;
-import com.kota65535.resolver.PackageLinkResolver;
+import com.kota65535.resolver.CoreApiLinkResolver;
+import com.kota65535.resolver.ProjectLinkResolver;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -110,12 +110,12 @@ public class JavadocMergerMojo extends AbstractMojo {
       throw new MojoExecutionException("Failed to copy groovdoc", e);
     }
 
-    PackageLinkResolver packageLinkResolver = new PackageLinkResolver(getLog(), outputDir);
-    JavaLinkResolver javaLinkResolver = new JavaLinkResolver(getLog(), outputDir, javaVersion,
+    ProjectLinkResolver projectLinkResolver = new ProjectLinkResolver(getLog(), outputDir);
+    CoreApiLinkResolver javaLinkResolver = new CoreApiLinkResolver(getLog(), outputDir, javaVersion,
         groovyVersion);
 
     try {
-      packageLinkResolver.update();
+      projectLinkResolver.update();
       javaLinkResolver.update();
     } catch (IOException e) {
       throw new MojoExecutionException("Failed to update links.", e);

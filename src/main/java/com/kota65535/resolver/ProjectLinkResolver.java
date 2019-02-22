@@ -28,14 +28,14 @@ import org.jsoup.select.Elements;
 /**
  * Update Javadoc -> Groovydoc links and vice versa.
  */
-public class PackageLinkResolver extends LinkResolverBase {
+public class ProjectLinkResolver extends LinkResolverBase {
 
   private Map<String, String> fullClassNameToLink = new HashMap<>();
   private Map<String, String> classNameToLink = new HashMap<>();
   private Set<String> fullClassNames;
   private Set<String> classNames;
 
-  public PackageLinkResolver(Log log, File outputDir) {
+  public ProjectLinkResolver(Log log, File outputDir) {
     super(log, outputDir);
   }
 
@@ -53,7 +53,7 @@ public class PackageLinkResolver extends LinkResolverBase {
           return super.visitFile(file, attrs);
         }
 
-        log.info(String.format("updating link %s", file.toString()));
+        log.info(String.format("updating package link %s", file.toString()));
 
         Document document = Jsoup.parse(file.toFile(), StandardCharsets.UTF_8.name());
         String prefix = file.getParent().relativize(outputDir.toPath()).toString()
@@ -65,7 +65,7 @@ public class PackageLinkResolver extends LinkResolverBase {
         replaceTextNodes(document.select("body h4"), prefix);
         Files.write(file, document.outerHtml().getBytes(StandardCharsets.UTF_8));
 
-        log.info(String.format("updated link %s", file.toString()));
+        log.info(String.format("updated package link %s", file.toString()));
 
         return super.visitFile(file, attrs);
       }
@@ -91,6 +91,8 @@ public class PackageLinkResolver extends LinkResolverBase {
     });
     fullClassNames = fullClassNameToLink.keySet();
     classNames = classNameToLink.keySet();
+
+    log.info(String.format("detected %d package classes.", fullClassNames.size()));
   }
 
   private void replaceTextNodes(Elements elements, String linkPrefix) {
@@ -138,10 +140,12 @@ public class PackageLinkResolver extends LinkResolverBase {
     List<Node> nodes = new ArrayList<>();
     tokens.forEach(s -> {
       if (fullClassNames.contains(s)) {
+        log.info(String.format("replace text %s to link %s", s, fullClassNameToLink.get(s)));
         nodes.add(new Element(Tag.valueOf("a"), "")
             .attr("href", linkPrefix + (fullClassNameToLink.get(s)))
             .text(toSimpleClassName(s)));
       } else if (classNames.contains(s)) {
+        log.info(String.format("replace text %s to link %s", s, classNameToLink.get(s)));
         nodes.add(new Element(Tag.valueOf("a"), "")
             .attr("href", linkPrefix + (classNameToLink.get(s)))
             .text(s));

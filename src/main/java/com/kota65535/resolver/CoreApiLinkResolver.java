@@ -2,7 +2,11 @@ package com.kota65535.resolver;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -10,7 +14,9 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -31,7 +37,7 @@ import org.reflections.scanners.SubTypesScanner;
 /**
  * Update links to the core API document of Java and Groovy classes.
  */
-public class JavaLinkResolver extends LinkResolverBase {
+public class CoreApiLinkResolver extends LinkResolverBase {
 
   private static final String JAVA_BASE_URL_FORMAT = "https://docs.oracle.com/javase/%s/docs/api/";
   private static final String JAVA_BASE_URL_FORMAT_FROM_11 = "https://docs.oracle.com/en/java/javase/%s/docs/api/";
@@ -43,7 +49,7 @@ public class JavaLinkResolver extends LinkResolverBase {
   private Map<String, String> fullClassNameToLink;
   private Set<String> fullClassNames;
 
-  public JavaLinkResolver(Log log, File outputDir, String javaVersion, String groovyVersion) {
+  public CoreApiLinkResolver(Log log, File outputDir, String javaVersion, String groovyVersion) {
     super(log, outputDir);
     if (Integer.parseInt(javaVersion) >= 11) {
       this.javaBaseUrl = String.format(JAVA_BASE_URL_FORMAT_FROM_11, javaVersion);
@@ -63,7 +69,7 @@ public class JavaLinkResolver extends LinkResolverBase {
       @Override
       public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
 
-        log.info(String.format("updating link %s", file.toString()));
+        log.info(String.format("updating core API link %s", file.toString()));
 
         Document document = Jsoup.parse(file.toFile(), StandardCharsets.UTF_8.name());
         replaceTextNodes(document.select("body dd"));
@@ -73,7 +79,7 @@ public class JavaLinkResolver extends LinkResolverBase {
         replaceTextNodes(document.select("body h4"));
         Files.write(file, document.outerHtml().getBytes(StandardCharsets.UTF_8));
 
-        log.info(String.format("updated link %s", file.toString()));
+        log.info(String.format("updated core API link %s", file.toString()));
 
         return super.visitFile(file, attrs);
       }
@@ -81,18 +87,21 @@ public class JavaLinkResolver extends LinkResolverBase {
   }
 
 
-  private void prepare() {
-    Set<Class<?>> javaClasses = new Reflections(
-        "java.", new SubTypesScanner(false)).getSubTypesOf(Object.class);
+  private void prepare() throws IOException {
+    Set<Class> javaClasses = getJavaCoreLibraryClasses("java");
     Map<String, String> javaClassNameToLink = javaClasses.stream()
         .collect(Collectors.toMap(
             Class::getName, c -> javaBaseUrl + c.getName().replace(".", "/") + ".html"));
 
+    log.info(String.format("detected %d Java core API classes.", javaClasses.size()));
+
     Set<Class<?>> groovyClasses = new Reflections(
-        "groovy.", new SubTypesScanner(false)).getSubTypesOf(Object.class);
+        "groovy", new SubTypesScanner(false)).getSubTypesOf(Object.class);
     Map<String, String> groovyClassNameToLink = groovyClasses.stream()
         .collect(Collectors.toMap(
             Class::getName, c -> groovyBaseUrl + c.getName().replace(".", "/") + ".html"));
+
+    log.info(String.format("detected %d Groovy core API classes.", groovyClasses.size()));
 
     fullClassNameToLink = Stream.of(javaClassNameToLink, groovyClassNameToLink)
         .map(Map::entrySet)
@@ -144,6 +153,7 @@ public class JavaLinkResolver extends LinkResolverBase {
     List<Node> nodes = new ArrayList<>();
     tokens.forEach(s -> {
       if (fullClassNames.contains(s)) {
+        log.info(String.format("replace text %s to link %s", s, fullClassNameToLink.get(s)));
         nodes.add(new Element(Tag.valueOf("a"), "")
             .attr("href", fullClassNameToLink.get(s))
             .text(toSimpleClassName(s)));
@@ -153,5 +163,39 @@ public class JavaLinkResolver extends LinkResolverBase {
     });
 
     return nodes;
+  }
+
+
+  private Set<Class> getJavaCoreLibraryClasses(String packageName) throws IOException {
+    ClassLoader c = Object.class.getClassLoader();
+    URI uri;
+    try {
+      uri = ClassLoader.getSystemClassLoader().getResource("java/lang/Object.class").toURI();
+    } catch (URISyntaxException e) {
+      throw new RuntimeException(e);
+    }
+    Set<Class> classes = new HashSet<>();
+    try (FileSystem zipfs = FileSystems.newFileSystem(uri, Collections.emptyMap())) {
+      for (Path path : zipfs.getRootDirectories()) {
+        Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+          @Override
+          public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
+              throws IOException {
+            String className = file.toString().substring(1)
+                .replace("/", ".")
+                .replace(".class", "");
+            if (className.startsWith(packageName)) {
+              try {
+                classes.add(Class.forName(className));
+              } catch (ClassNotFoundException e) {
+                log.warn(String.format("class '%s' not found.", className));
+              }
+            }
+            return super.visitFile(file, attrs);
+          }
+        });
+      }
+    }
+    return classes;
   }
 }
