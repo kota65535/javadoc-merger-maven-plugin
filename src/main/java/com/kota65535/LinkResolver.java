@@ -89,9 +89,9 @@ public class LinkResolver {
         Document document = Jsoup.parse(file.toFile(), StandardCharsets.UTF_8.name());
         String prefix = file.getParent().relativize(outputDir.toPath()).toString()
             .replace(File.separator, "/") + "/";
-        replaceTextNodes(document.select("div.description dd"), prefix);
-        replaceTextNodes(document.select("div.description pre"), prefix);
-        replaceTextNodes(document.select("li.blockList code"), prefix);
+        replaceTextNodes(document.select("body dd"), prefix);
+        replaceTextNodes(document.select("body pre"), prefix);
+        replaceTextNodes(document.select("body code"), prefix);
         Files.write(file, document.outerHtml().getBytes(StandardCharsets.UTF_8));
 
         log.info(String.format("updated link %s", file.toString()));
