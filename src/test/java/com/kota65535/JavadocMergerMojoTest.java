@@ -38,6 +38,8 @@ public class JavadocMergerMojoTest extends AbstractMojoTestCase {
     setVariableValueToObject(myMojo, "javadocDir", javaDocDir);
     setVariableValueToObject(myMojo, "groovydocDir", groovydocDir);
     setVariableValueToObject(myMojo, "outputDir", outputDir);
+    setVariableValueToObject(myMojo, "javaVersion", "8");
+    setVariableValueToObject(myMojo, "groovyVersion", "latest");
 
     assertNotNull(myMojo);
 

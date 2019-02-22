@@ -1,4 +1,4 @@
-package com.kota65535;
+package com.kota65535.resolver;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,8 +13,8 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
-import org.apache.commons.io.FilenameUtils;
 import org.apache.maven.plugin.logging.Log;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -26,60 +26,29 @@ import org.jsoup.select.Elements;
 
 
 /**
- * Update javadoc links failing to point groovy class.
+ * Update Javadoc -> Groovydoc links and vice versa.
  */
-public class LinkResolver {
-
-  private Log log;
-
-  private File outputDir;
+public class PackageLinkResolver extends LinkResolverBase {
 
   private Map<String, String> fullClassNameToLink = new HashMap<>();
   private Map<String, String> classNameToLink = new HashMap<>();
-  private Map<String, String> fullToNormalClassName = new HashMap<>();
-  private List<String> fullClassNames;
-  private List<String> classNames;
+  private Set<String> fullClassNames;
+  private Set<String> classNames;
 
-  public LinkResolver(Log log, File outputDir) {
-    this.log = log;
-    this.outputDir = outputDir;
+  public PackageLinkResolver(Log log, File outputDir) {
+    super(log, outputDir);
   }
 
 
   public void update() throws IOException {
 
-    // Create map with a class name as key, and a link text as value
-    Files.walkFileTree(outputDir.toPath(), new SimpleFileVisitor<Path>() {
-      @Override
-      public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-        // Copy only groovydoc file (with class name)
-        if (!Character.isUpperCase(file.getFileName().toString().charAt(0))
-            || file.toString().contains("class-use")) {
-          return super.visitFile(file, attrs);
-        }
-
-        String fullClassName = getFullClassName(file.toFile());
-        String htmlLink = fullClassName.replace(".", "/") + ".html";
-        String className = getClassName(file.toFile());
-        fullClassNameToLink.put(fullClassName, htmlLink);
-        classNameToLink.put(className, htmlLink);
-        fullToNormalClassName.put(fullClassName, className);
-        return super.visitFile(file, attrs);
-      }
-    });
-
-    fullClassNames = fullClassNameToLink.keySet().stream()
-        .sorted(Comparator.comparingInt(String::length).reversed())
-        .collect(Collectors.toList());
-    classNames = classNameToLink.keySet().stream()
-        .sorted(Comparator.comparingInt(String::length).reversed())
-        .collect(Collectors.toList());
+    prepare();
 
     // Update javadoc links
     Files.walkFileTree(outputDir.toPath(), new SimpleFileVisitor<Path>() {
       @Override
       public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-        // Copy only groovydoc file (with class name)
+        // Update only class javadoc
         if (!Character.isUpperCase(file.getFileName().toString().charAt(0))) {
           return super.visitFile(file, attrs);
         }
@@ -92,6 +61,8 @@ public class LinkResolver {
         replaceTextNodes(document.select("body dd"), prefix);
         replaceTextNodes(document.select("body pre"), prefix);
         replaceTextNodes(document.select("body code"), prefix);
+        replaceTextNodes(document.select("body code strong"), prefix);
+        replaceTextNodes(document.select("body h4"), prefix);
         Files.write(file, document.outerHtml().getBytes(StandardCharsets.UTF_8));
 
         log.info(String.format("updated link %s", file.toString()));
@@ -101,15 +72,25 @@ public class LinkResolver {
     });
   }
 
-  private String getFullClassName(File target) {
-    return FilenameUtils.removeExtension(target.toString())
-        .replace(outputDir.toString(), "")
-        .replace(File.separator, ".")
-        .substring(1);
-  }
 
-  private String getClassName(File target) {
-    return FilenameUtils.getBaseName(target.toString());
+  private void prepare() throws IOException {
+    Document document = Jsoup.parse(
+        new File(outputDir, "allclasses-noframe.html"), StandardCharsets.UTF_8.name());
+    fullClassNameToLink = document.select("li a").stream()
+        .collect(Collectors.toMap(
+            a -> a.attr("title").replace("class in ", "") + "." + a.text().replace(".", "$"),
+            a -> a.attr("href")));
+    classNameToLink = new HashMap<>();
+    fullClassNameToLink.forEach((k, v) -> {
+      String key = toSimpleClassName(k);
+      if (classNameToLink.containsKey(key)) {
+        log.warn(String.format("duplicated simple class name '%s'.", key));
+      } else {
+        classNameToLink.put(toSimpleClassName(key), v);
+      }
+    });
+    fullClassNames = fullClassNameToLink.keySet();
+    classNames = classNameToLink.keySet();
   }
 
   private void replaceTextNodes(Elements elements, String linkPrefix) {
@@ -135,25 +116,13 @@ public class LinkResolver {
     element.replaceWith(newElement);
   }
 
-  private List<Integer> getIndexOf(String target, List<String> candidates) {
-    List<Integer> indices = new ArrayList<>();
-    for (String cnd : candidates) {
-      int idx = target.indexOf(cnd);
-      if (idx >= 0) {
-        indices.add(idx);
-        indices.add(idx + cnd.length());
-      }
-    }
-    return indices;
-  }
-
   private List<Node> splitText(String str, String linkPrefix) {
     List<Integer> indices = new ArrayList<>();
     // Create indices that split the string with class names
 
-    indices.addAll(getIndexOf(str, fullClassNames));
+    indices.addAll(getIndicesOf(str, fullClassNames));
     if (indices.size() == 0) {
-      indices.addAll(getIndexOf(str, classNames));
+      indices.addAll(getIndicesOf(str, classNames));
     }
 
     // Get split strings
@@ -171,7 +140,7 @@ public class LinkResolver {
       if (fullClassNames.contains(s)) {
         nodes.add(new Element(Tag.valueOf("a"), "")
             .attr("href", linkPrefix + (fullClassNameToLink.get(s)))
-            .text(fullToNormalClassName.get(s)));
+            .text(toSimpleClassName(s)));
       } else if (classNames.contains(s)) {
         nodes.add(new Element(Tag.valueOf("a"), "")
             .attr("href", linkPrefix + (classNameToLink.get(s)))

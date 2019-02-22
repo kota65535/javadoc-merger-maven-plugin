@@ -1,6 +1,8 @@
 package com.kota65535;
 
 
+import com.kota65535.resolver.JavaLinkResolver;
+import com.kota65535.resolver.PackageLinkResolver;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
@@ -27,10 +29,22 @@ public class JavadocMergerMojo extends AbstractMojo {
   private File javadocDir;
 
   /**
+   * Java SE version to resolve links to Java SE core API documents.
+   */
+  @Parameter(property = "javaVersion", defaultValue = "11")
+  private String javaVersion;
+
+  /**
    * The location of input Groovydoc.
    */
   @Parameter(property = "groovydocDir", required = true)
   private File groovydocDir;
+
+  /**
+   * Groovy version to resolve links to Groovy core API documents.
+   */
+  @Parameter(property = "groovyVersion", defaultValue = "latest")
+  private String groovyVersion;
 
   /**
    * The location for the merged API docs.
@@ -39,9 +53,6 @@ public class JavadocMergerMojo extends AbstractMojo {
   private File outputDir;
 
   private JavadocUpdater javadocUpdater;
-
-  private LinkResolver linkResolver;
-
 
   public void execute() throws MojoExecutionException {
     javadocUpdater = new JavadocUpdater(getLog(), outputDir);
@@ -99,10 +110,13 @@ public class JavadocMergerMojo extends AbstractMojo {
       throw new MojoExecutionException("Failed to copy groovdoc", e);
     }
 
-    linkResolver = new LinkResolver(getLog(), outputDir);
+    PackageLinkResolver packageLinkResolver = new PackageLinkResolver(getLog(), outputDir);
+    JavaLinkResolver javaLinkResolver = new JavaLinkResolver(getLog(), outputDir, javaVersion,
+        groovyVersion);
 
     try {
-      linkResolver.update();
+      packageLinkResolver.update();
+      javaLinkResolver.update();
     } catch (IOException e) {
       throw new MojoExecutionException("Failed to update links.", e);
     }
