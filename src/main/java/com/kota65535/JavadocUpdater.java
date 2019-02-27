@@ -338,11 +338,12 @@ public class JavadocUpdater {
 
     String htmlLink = qualifiedName.replace(".", "/") + ".html";
     String className = qualifiedName.substring(qualifiedName.lastIndexOf(".") + 1);
+    String packageName = qualifiedName.substring(0, qualifiedName.lastIndexOf("."));
 
     // Create table item
     Map<String, String> context = new HashMap<>();
     context.put("htmlLink", htmlLink);
-    context.put("qualifiedName", qualifiedName);
+    context.put("packageName", packageName);
     context.put("className", className);
     String rendered = allClassesItemTemplate.execute(context);
 
