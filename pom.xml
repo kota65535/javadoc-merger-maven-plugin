@@ -7,7 +7,7 @@
 
   <groupId>com.kota65535</groupId>
   <artifactId>javadoc-merger-maven-plugin</artifactId>
-  <version>1.1.1</version>
+  <version>1.1.2</version>
   <packaging>maven-plugin</packaging>
 
   <name>Javadoc Merger Maven Plugin</name>
